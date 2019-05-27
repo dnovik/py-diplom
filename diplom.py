@@ -13,20 +13,22 @@ def get_group_info(unique_main_user_groups):
 
     BASE_URL = 'https://api.vk.com/method/groups.getById'
 
-    params = {
-        'access_token': TOKEN,
-        'group_ids': unique_main_user_groups,
-        'v': '5.95',
-        'fields': ['id', 'name', 'members_count']
-    }
+    for group in unique_main_user_groups:
 
-   
-    r = requests.get(BASE_URL, params).json()
-    unique_groups = r['response']
+        params = {
+            'access_token': TOKEN,
+            'group_id': group,
+            'v': '5.95',
+            'fields': ['id', 'name', 'members_count']
+        } 
+        r = requests.get(BASE_URL, params).json()
+        unique_groups = r['response']
+        time.sleep(1)
 
-    print(unique_groups)
+        with open(groups_file, 'a') as file:
+            json.dump(unique_groups, file, indent=1)
 
-groups = get_group_info(unique_groups)
+get_group_info(unique_groups)
 
 
 
