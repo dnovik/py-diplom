@@ -9,6 +9,20 @@ groups_file = 'groups.json'
 
 
 
+def main(user_id):
+
+    # получим id пользователя
+    user_id = get_id_by_username(user_id)
+    # получим список друзей
+    friend_list = get_friend_ids(user_id)
+    # получим список групп друзей
+    group_list = get_user_group(friend_list[0:4])
+    # получим непересекающиеся группы
+    diff_groups = compare_groups(user_id, group_list)
+    # выводим по ним информацию в файл
+    get_group_info(diff_groups)
+
+
 def get_group_info(unique_main_user_groups):
 
     BASE_URL = 'https://api.vk.com/method/groups.getById'
@@ -27,8 +41,6 @@ def get_group_info(unique_main_user_groups):
 
         with open(groups_file, 'a') as file:
             json.dump(unique_groups, file, indent=1)
-
-get_group_info(unique_groups)
 
 
 
@@ -74,12 +86,12 @@ def get_friend_ids(user_id):
 
 
 def get_user_group(user_id):
-
+    # функция возвращает список групп пользователя при вводе user_id
     BASE_URL = 'https://api.vk.com/method/groups.get'
     params = {
         'access_token': TOKEN,
         'user_id': user_id,
-        'v': '5.95',}
+        'v': '5.95'}
 
     r = requests.get(BASE_URL, params).json()
     try:
@@ -88,8 +100,25 @@ def get_user_group(user_id):
     except KeyError:
         pass
 
+
+def get_id_by_username(user_name):
+    # функция возвращает id пользователя при вводе username
+    BASE_URL = 'https://api.vk.com/method/users.get'
+
+    params = {
+        'access_token': TOKEN,
+        'domain': user_name,
+        'v': '5.95'
+    }
+    r = requests.get(BASE_URL, params).json()
+    user_id = r['response'][0]['id']
+
+    return user_id
+
+get_id_by_username('171691064')
+
+
 test_friends = [7858, 317799]
 unique_groups = compare_groups(USER_ID, test_friends)
-get_group_info(unique_groups)
 
-print(unique_groups)
+main('eshmargunov')
