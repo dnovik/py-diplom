@@ -2,6 +2,8 @@ import requests
 import time
 import json
 
+# для запуска программы необходимо в функцию main() передать username или user_id
+
 USER_ID = '171691064'
 USER_NAME = 'eshmargunov'
 TOKEN ='73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
@@ -9,27 +11,19 @@ groups_file = 'groups.json'
 
 
 
-def get_diff_groups(user_id):
-    # основная функция - вход в программу!
-
-
-    # получим id пользователя
-    user_id = get_id_by_username(user_id)
-    # получим список друзей
+def main(user_id):
+    user_id = get_id_by_username(USER_NAME)
     friend_list = get_friend_ids(user_id)
-    # получим список групп друзей
-    group_list = get_user_group(friend_list)
-    # получим непересекающиеся группы
-    diff_groups = compare_groups(user_id, group_list)
-    # выводим по ним информацию в файл
-    get_group_info(diff_groups)
-    print('Программа завершена!')
+    group_list = get_user_group(friend_list[0:5])
+    unique_groups = compare_groups(USER_ID, friend_list[0:5])
+    get_group_info(unique_groups)
 
 
 def get_group_info(groups):
     # функция возвращает информацию в указанном формате при вводе id группы
     BASE_URL = 'https://api.vk.com/method/groups.getById'
 
+    print('Получаем информацию по группам')
     for group in groups:
 
         params = {
@@ -38,7 +32,7 @@ def get_group_info(groups):
             'v': '5.95',
             'fields': ['id', 'name', 'members_count']
         }
-        print('.', '.', '.') 
+        print('_') 
         r = requests.get(BASE_URL, params).json()
         unique_groups = r['response']
         time.sleep(1)
@@ -54,18 +48,20 @@ def compare_groups(main_user, friend_list):
     main_user_groups = set(get_user_group(main_user))
     friends_group = set()
 
-    group_list = get_user_group(friend)          
+    for friend_id in friend_list:
+        group_list = get_user_group(friend_id)
+        time.sleep(1)
+        
+        try:
+            for group in group_list:
+                friends_group.add(group)
+        except TypeError:
+            pass
     
-    for group_list in user_groups:
-        if len(group_list) > 1000:
-                group_list = group_list[0:1001]
-        for group in group_list:
-            friends_group.add(group)
+    unique_groups = main_user_groups.difference(friends_group)
 
-    unique_main_user_groups = list(main_user_groups.difference(friends_group))
-
-    return unique_main_user_groups
-
+    return unique_groups
+    
 
 def get_friend_ids(user_id):
     # функция возвращает список id друзей пользователя при вводе user_id
@@ -76,8 +72,7 @@ def get_friend_ids(user_id):
         'user_id': user_id,
         'v': '5.95'
     }
-
-    print('...')
+    print('_')
     r = requests.get(BASE_URL, params).json()
     friend_list = r['response']['items']
 
@@ -85,27 +80,25 @@ def get_friend_ids(user_id):
 
 
 
-def get_user_group(user_ids):
+def get_user_group(user_id):
     # функция возвращает список групп одного пользователя при вводе user_id
     BASE_URL = 'https://api.vk.com/method/groups.get'
 
-    groups = []
-
-    
     params = {
         'access_token': TOKEN,
         'user_id': user_id,
         'v': '5.95'}
+    r = requests.get(BASE_URL, params).json()
+    print('_')
     try:
-        print('...')
-        r = requests.get(BASE_URL, params).json()
         group_list = r['response']['items']
+        if len(group_list) > 1000:
+            group_list = group_list[0:1000]
     except KeyError:
         pass
+    else:
+        return group_list
 
-        groups.append(group_list)
-
-    return groups
 
 
 def get_id_by_username(user_name):
@@ -117,17 +110,8 @@ def get_id_by_username(user_name):
         'domain': user_name,
         'v': '5.95'
     }
-    print('...')
+    print('_')
     r = requests.get(BASE_URL, params).json()
     user_id = r['response'][0]['id']
 
     return user_id
-
-
-get_diff_groups(USER_NAME)
-
-
-friends = get_friend_ids(USER_ID)
-compare_groups(USER_ID, friends)
-
-get_user_group(USER_ID)
