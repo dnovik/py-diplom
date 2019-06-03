@@ -12,18 +12,27 @@ groups_file = 'groups.json'
 
 
 def main(user_id):
+    print('Получаем id основного юзера...')
     user_id = get_id_by_username(USER_NAME)
+    print('Собираем список друзей основного юзера...')
     friend_list = get_friend_ids(user_id)
-    group_list = get_user_group(friend_list[0:5])
-    unique_groups = compare_groups(USER_ID, friend_list[0:5])
+    print('Собираем список id групп друзей основного юзера...')
+    group_list = get_user_group(friend_list)
+    print('Получаем список id уникальных групп основного юзера...')
+    unique_groups = compare_groups(USER_ID, friend_list)
+    print('Получаем информацию по уникальным группам основного юзера...')
     get_group_info(unique_groups)
+    print('Пишем информацию в файл...')
+    print('Программа завершена...')
+
 
 
 def get_group_info(groups):
     # функция возвращает информацию в указанном формате при вводе id группы
+
+    group_info = list()
     BASE_URL = 'https://api.vk.com/method/groups.getById'
 
-    print('Получаем информацию по группам')
     for group in groups:
 
         params = {
@@ -32,15 +41,25 @@ def get_group_info(groups):
             'v': '5.95',
             'fields': ['id', 'name', 'members_count']
         }
+
         print('_') 
         r = requests.get(BASE_URL, params).json()
-        unique_groups = r['response']
-        time.sleep(1)
+        group_info = r['response']
 
-        with open(groups_file, 'a') as file:
-            json.dump(unique_groups, file, indent=1)
-        
-    print('Запись в файл завершена')
+        group_id = group_info[0]['id']
+        group_name = group_info[0]['name']
+        members = group_info[0]['members_count']
+
+        group_info.append(
+            {
+                'name' : group_name,
+                'gid' : group_id,
+                'members_count' : members
+            }
+        )
+
+    return group_info
+
 
 
 def compare_groups(main_user, friend_list):
@@ -79,8 +98,8 @@ def get_friend_ids(user_id):
     return friend_list
 
 
-
 def get_user_group(user_id):
+
     # функция возвращает список групп одного пользователя при вводе user_id
     BASE_URL = 'https://api.vk.com/method/groups.get'
     params = {
@@ -95,11 +114,14 @@ def get_user_group(user_id):
             group_list = group_list[0:1000]
     except KeyError:
         pass
+    except UnboundLocalError:
+        pass
     else:
         return group_list
 
 
     return group_list
+
 
 def get_id_by_username(user_name):
     # функция возвращает id пользователя при вводе username
@@ -115,3 +137,10 @@ def get_id_by_username(user_name):
     user_id = r['response'][0]['id']
 
     return user_id
+
+
+user_id = get_id_by_username(USER_NAME)
+friend_list = get_friend_ids(user_id)
+group_list = get_user_group(friend_list)
+unique_groups = compare_groups(USER_ID, friend_list)
+get_group_info(unique_groups)
