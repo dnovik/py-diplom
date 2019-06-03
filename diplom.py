@@ -58,7 +58,7 @@ def compare_groups(main_user, friend_list):
     
     for group_list in user_groups:
         if len(group_list) > 1000:
-                group_list = group_list[0:1001]
+                group_list = group_list[0:1000]
         for group in group_list:
             friends_group.add(group)
 
@@ -85,28 +85,23 @@ def get_friend_ids(user_id):
 
 
 
-def get_user_group(user_ids):
+def get_user_group(user_id):
     # функция возвращает список групп одного пользователя при вводе user_id
     BASE_URL = 'https://api.vk.com/method/groups.get'
-
-    groups = []
-
     
     params = {
         'access_token': TOKEN,
         'user_id': user_id,
         'v': '5.95'}
+
+    r = requests.get(BASE_URL, params).json()
+
     try:
-        print('...')
-        r = requests.get(BASE_URL, params).json()
         group_list = r['response']['items']
     except KeyError:
-        pass
+        group_list = []
 
-        groups.append(group_list)
-
-    return groups
-
+    return group_list
 
 def get_id_by_username(user_name):
     # функция возвращает id пользователя при вводе username
@@ -124,10 +119,31 @@ def get_id_by_username(user_name):
     return user_id
 
 
-get_diff_groups(USER_NAME)
 
 
 friends = get_friend_ids(USER_ID)
 compare_groups(USER_ID, friends)
 
-get_user_group(USER_ID)
+
+friend_groups = set()
+group_list = list()
+for friend in friends[0:3]:
+    group = get_user_group(friend)
+    group_list.append(group)
+
+for groupes in group_list:
+    if len(groupes) > 1000:
+        groupes = groupes[0:1000]
+    else:
+        for group in groupes:
+            friend_groups.add(group)
+
+for groupes in group_list:
+    print(len(groupes))
+
+
+for groupes in group_list:
+    if len(groupes) > 1000:
+        print(True)
+    else:
+        print(False)
