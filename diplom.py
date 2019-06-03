@@ -10,27 +10,29 @@ TOKEN ='73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf8
 groups_file = 'groups.json'
 
 
-
 def main(user_id):
     print('Получаем id основного юзера...')
     user_id = get_id_by_username(USER_NAME)
     print('Собираем список друзей основного юзера...')
     friend_list = get_friend_ids(user_id)
-    print('Собираем список id групп друзей основного юзера...')
-    group_list = get_user_group(friend_list)
-    print('Получаем список id уникальных групп основного юзера...')
     unique_groups = compare_groups(USER_ID, friend_list)
     print('Получаем информацию по уникальным группам основного юзера...')
-    get_group_info(unique_groups)
+    group_info = get_group_info(unique_groups)
     print('Пишем информацию в файл...')
+    write_to_json(group_info, groups_file)
     print('Программа завершена...')
 
+
+def write_to_json(groups_info, file_path):
+
+    with open(file_path, 'w') as write_file:
+        json.dump(groups_info, write_file, indent=1)
 
 
 def get_group_info(groups):
     # функция возвращает информацию в указанном формате при вводе id группы
 
-    group_info = list()
+    group_description = list()
     BASE_URL = 'https://api.vk.com/method/groups.getById'
 
     for group in groups:
@@ -42,15 +44,15 @@ def get_group_info(groups):
             'fields': ['id', 'name', 'members_count']
         }
 
-        print('_') 
+        print('_')
+        print(' ')
         r = requests.get(BASE_URL, params).json()
         group_info = r['response']
 
         group_id = group_info[0]['id']
         group_name = group_info[0]['name']
         members = group_info[0]['members_count']
-
-        group_info.append(
+        group_description.append(
             {
                 'name' : group_name,
                 'gid' : group_id,
@@ -58,29 +60,30 @@ def get_group_info(groups):
             }
         )
 
-    return group_info
-
+    return group_description
 
 
 def compare_groups(main_user, friend_list):
     # функция возвращает список непересекающихся групп пользователя при вводе user_id и id друзей
+
+    print('Получим список групп основного юзера')
     main_user_groups = set(get_user_group(main_user))
     friends_group = set()
 
+    print('Получим список групп друзей основного юзера. Придеться подождать...')
     for friend_id in friend_list:
         group_list = get_user_group(friend_id)
-        time.sleep(1)
-        
+        time.sleep(1)   
         try:
             for group in group_list:
                 friends_group.add(group)
         except TypeError:
             pass
-    
+
     unique_groups = main_user_groups.difference(friends_group)
 
     return unique_groups
-    
+
 
 def get_friend_ids(user_id):
     # функция возвращает список id друзей пользователя при вводе user_id
@@ -92,6 +95,7 @@ def get_friend_ids(user_id):
         'v': '5.95'
     }
     print('_')
+    print(' ')
     r = requests.get(BASE_URL, params).json()
     friend_list = r['response']['items']
 
@@ -100,7 +104,7 @@ def get_friend_ids(user_id):
 
 def get_user_group(user_id):
 
-    # функция возвращает список групп одного пользователя при вводе user_id
+    # вспомогательная функция возвращает список групп одного пользователя при вводе user_id
     BASE_URL = 'https://api.vk.com/method/groups.get'
     params = {
         'access_token': TOKEN,
@@ -108,6 +112,7 @@ def get_user_group(user_id):
         'v': '5.95'}
     r = requests.get(BASE_URL, params).json()
     print('_')
+    print(' ')
     try:
         group_list = r['response']['items']
         if len(group_list) > 1000:
@@ -120,9 +125,6 @@ def get_user_group(user_id):
         return group_list
 
 
-    return group_list
-
-
 def get_id_by_username(user_name):
     # функция возвращает id пользователя при вводе username
     BASE_URL = 'https://api.vk.com/method/users.get'
@@ -133,14 +135,10 @@ def get_id_by_username(user_name):
         'v': '5.95'
     }
     print('_')
+    print(' ')
     r = requests.get(BASE_URL, params).json()
     user_id = r['response'][0]['id']
 
     return user_id
 
-
-user_id = get_id_by_username(USER_NAME)
-friend_list = get_friend_ids(user_id)
-group_list = get_user_group(friend_list)
-unique_groups = compare_groups(USER_ID, friend_list)
-get_group_info(unique_groups)
+main(USER_NAME)
